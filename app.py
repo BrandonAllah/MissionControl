@@ -3,7 +3,7 @@ import streamlit as st
 
 # ======================================
 # MISSION CONTROL
-# Version 0.4 - Flight Simulation
+# Version 0.5 - Flight Telemetry Graphs
 # ======================================
 
 # Configure the application
@@ -28,13 +28,13 @@ def calculate_launch(time_seconds):
     initial_altitude = 0       # meters
     acceleration = 15          # meters/second^2
 
-    # Velocity: v = v0 + at
+    # Velocity equation: v = v0 + at
     velocity = (
         initial_velocity
         + acceleration * time_seconds
     )
 
-    # Altitude: y = y0 + v0*t + 0.5*a*t^2
+    # Position equation: y = y0 + v0*t + 0.5*a*t^2
     altitude = (
         initial_altitude
         + initial_velocity * time_seconds
@@ -48,7 +48,7 @@ def calculate_launch(time_seconds):
 # INITIALIZE SPACECRAFT DATA
 # ======================================
 
-# Session state keeps our values between
+# Session state remembers values between
 # Streamlit reruns.
 
 if "altitude" not in st.session_state:
@@ -60,6 +60,10 @@ if "altitude" not in st.session_state:
 if "elapsed_time" not in st.session_state:
     st.session_state.elapsed_time = 0
 
+# Store measurements for our graphs
+if "flight_history" not in st.session_state:
+    st.session_state.flight_history = []
+
 
 # ======================================
 # DASHBOARD HEADER
@@ -67,7 +71,7 @@ if "elapsed_time" not in st.session_state:
 
 st.title("🚀 Mission Control")
 st.write("Spacecraft Telemetry Dashboard")
-st.caption("Version 0.4 | Flight Simulation")
+st.caption("Version 0.5 | Flight Telemetry Graphs")
 
 st.divider()
 
@@ -90,6 +94,15 @@ with col_launch:
         st.session_state.fuel = 100
         st.session_state.mission_status = "In Flight"
 
+        # Clear previous flight history
+        st.session_state.flight_history = [
+            {
+                "Time (s)": 0,
+                "Altitude (m)": 0.0,
+                "Velocity (m/s)": 0.0
+            }
+        ]
+
 
 # Advance the simulation by one second
 with col_advance:
@@ -100,10 +113,17 @@ with col_advance:
             # Increase elapsed time
             st.session_state.elapsed_time += 1
 
-            # Calculate new altitude and velocity
+            # Calculate altitude and velocity
             altitude_m, velocity_ms = calculate_launch(
                 st.session_state.elapsed_time
             )
+
+            # Save the new measurement
+            st.session_state.flight_history.append({
+                "Time (s)": st.session_state.elapsed_time,
+                "Altitude (m)": altitude_m,
+                "Velocity (m/s)": velocity_ms
+            })
 
             # Convert meters to kilometers
             st.session_state.altitude = round(
@@ -128,6 +148,9 @@ with col_reset:
         st.session_state.velocity = 0
         st.session_state.fuel = 100
         st.session_state.mission_status = "Ready for Launch"
+
+        # Clear flight history
+        st.session_state.flight_history = []
 
 st.divider()
 
@@ -206,3 +229,36 @@ st.caption(
     "It does not yet model changing gravity, "
     "rocket mass, atmospheric drag, or realistic fuel usage."
 )
+
+
+# ======================================
+# FLIGHT TELEMETRY GRAPHS
+# ======================================
+
+st.divider()
+
+st.subheader("Flight Telemetry Graphs")
+
+if st.session_state.flight_history:
+
+    st.write("### Altitude vs. Time")
+
+    st.line_chart(
+        st.session_state.flight_history,
+        x="Time (s)",
+        y="Altitude (m)"
+    )
+
+    st.write("### Velocity vs. Time")
+
+    st.line_chart(
+        st.session_state.flight_history,
+        x="Time (s)",
+        y="Velocity (m/s)"
+    )
+
+else:
+    st.info(
+        "Launch the rocket and advance time "
+        "to collect flight data."
+    )
