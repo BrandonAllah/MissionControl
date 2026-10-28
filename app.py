@@ -3,7 +3,7 @@ import streamlit as st
 
 # ======================================
 # MISSION CONTROL
-# Version 0.3 - Physics-Based Launch
+# Version 0.4 - Flight Simulation
 # ======================================
 
 # Configure the application
@@ -12,6 +12,7 @@ st.set_page_config(
     page_icon="🚀",
     layout="wide"
 )
+
 
 # ======================================
 # PHYSICS SIMULATION
@@ -25,15 +26,15 @@ def calculate_launch(time_seconds):
 
     initial_velocity = 0       # meters/second
     initial_altitude = 0       # meters
-    acceleration = 15         # meters/second^2
+    acceleration = 15          # meters/second^2
 
-    # Velocity equation: v = v0 + at
+    # Velocity: v = v0 + at
     velocity = (
         initial_velocity
         + acceleration * time_seconds
     )
 
-    # Position equation: y = y0 + v0*t + 0.5*a*t^2
+    # Altitude: y = y0 + v0*t + 0.5*a*t^2
     altitude = (
         initial_altitude
         + initial_velocity * time_seconds
@@ -47,11 +48,17 @@ def calculate_launch(time_seconds):
 # INITIALIZE SPACECRAFT DATA
 # ======================================
 
+# Session state keeps our values between
+# Streamlit reruns.
+
 if "altitude" not in st.session_state:
     st.session_state.altitude = 0
     st.session_state.velocity = 0
     st.session_state.fuel = 100
     st.session_state.mission_status = "Ready for Launch"
+
+if "elapsed_time" not in st.session_state:
+    st.session_state.elapsed_time = 0
 
 
 # ======================================
@@ -60,7 +67,7 @@ if "altitude" not in st.session_state:
 
 st.title("🚀 Mission Control")
 st.write("Spacecraft Telemetry Dashboard")
-st.caption("Version 0.3 | Physics-Based Launch Simulation")
+st.caption("Version 0.4 | Flight Simulation")
 
 st.divider()
 
@@ -71,43 +78,52 @@ st.divider()
 
 st.subheader("Launch Controls")
 
-# Choose how long the rocket accelerates
-time_seconds = st.slider(
-    "Simulation Time (seconds)",
-    min_value=0,
-    max_value=60,
-    value=10,
-    step=1
-)
+col_launch, col_advance, col_reset = st.columns(3)
 
-col_launch, col_reset = st.columns(2)
-
+# Launch the spacecraft
 with col_launch:
     if st.button("🚀 Launch Mission"):
 
-        # Calculate altitude and velocity
-        altitude_m, velocity_ms = calculate_launch(
-            time_seconds
-        )
-
-        # Convert meters to kilometers
-        st.session_state.altitude = round(
-            altitude_m / 1000, 2
-        )
-
-        # Convert m/s to km/h
-        st.session_state.velocity = round(
-            velocity_ms * 3.6, 2
-        )
-
-        # Placeholder fuel consumption
-        st.session_state.fuel = 95
-
+        st.session_state.elapsed_time = 0
+        st.session_state.altitude = 0
+        st.session_state.velocity = 0
+        st.session_state.fuel = 100
         st.session_state.mission_status = "In Flight"
 
+
+# Advance the simulation by one second
+with col_advance:
+    if st.button("⏩ Advance 1 Second"):
+
+        if st.session_state.mission_status == "In Flight":
+
+            # Increase elapsed time
+            st.session_state.elapsed_time += 1
+
+            # Calculate new altitude and velocity
+            altitude_m, velocity_ms = calculate_launch(
+                st.session_state.elapsed_time
+            )
+
+            # Convert meters to kilometers
+            st.session_state.altitude = round(
+                altitude_m / 1000, 3
+            )
+
+            # Convert m/s to km/h
+            st.session_state.velocity = round(
+                velocity_ms * 3.6, 2
+            )
+
+        else:
+            st.warning("Launch the spacecraft first!")
+
+
+# Reset the spacecraft
 with col_reset:
     if st.button("🔄 Reset Mission"):
 
+        st.session_state.elapsed_time = 0
         st.session_state.altitude = 0
         st.session_state.velocity = 0
         st.session_state.fuel = 100
@@ -125,26 +141,33 @@ st.subheader("Spacecraft Telemetry")
 altitude = st.session_state.altitude
 velocity = st.session_state.velocity
 fuel = st.session_state.fuel
+elapsed_time = st.session_state.elapsed_time
 mission_status = st.session_state.mission_status
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.metric(
         "Altitude",
-        f"{altitude} km"
+        f"{altitude:.3f} km"
     )
 
 with col2:
     st.metric(
         "Velocity",
-        f"{velocity} km/h"
+        f"{velocity:.2f} km/h"
     )
 
 with col3:
     st.metric(
         "Fuel Remaining",
         f"{fuel}%"
+    )
+
+with col4:
+    st.metric(
+        "Elapsed Time",
+        f"{elapsed_time} sec"
     )
 
 st.divider()
