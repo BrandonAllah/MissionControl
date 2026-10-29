@@ -1,3 +1,5 @@
+# GitHub Hackathon Practice
+# Learning how to work with branches and pull requests.
 
 import streamlit as st
 
@@ -203,7 +205,7 @@ st.divider()
 st.subheader("Mission Status")
 
 if mission_status == "Ready for Launch":
-    st.info("🟢 Ready for Launch")
+    st.info("Ready for Launch!")
 
 elif mission_status == "In Flight":
     st.success("🚀 Spacecraft In Flight")
