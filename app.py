@@ -203,7 +203,7 @@ st.divider()
 st.subheader("Mission Status")
 
 if mission_status == "Ready for Launch":
-    st.info("🟢 Ready for Launch")
+    st.info("Ready for Launch!")
 
 elif mission_status == "In Flight":
     st.success("🚀 Spacecraft In Flight")
